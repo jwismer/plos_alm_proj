@@ -1,0 +1,140 @@
+<!-- Make sure that the knitr package is installed and loaded. -->
+<!-- For more info on the package options see http://yihui.name/knitr/options -->
+
+<!-- Replace below with the title of your project -->
+### Relation Between Citations and Downloads for Articles in PLOS
+
+<!-- Enter the code required to load your data in the space below. The data will be loaded but the line of code won't show up in your write up (echo=FALSE) in order to save space-->
+```{r echo=FALSE}
+##download.file(url="http://article-level-metrics.plos.org/files/2012/10/alm_report_2014-03-10.csv", destfile="alm_report_2014-03-10.csv")
+alm_report_2014.03.10 <- read.csv("alm_report_2014-03-10.csv", header=TRUE)
+```
+
+<!-- In the remainder of the document, add R code chunks as needed -->
+
+### Introduction:
+The PLOS ALM dataset contains article-level metrics (citation and usage data) for all of the articles included in the Public Library of Science journals. The dataset is updated on a quarterly basis and includes data from a number of different research patforms, social media sites, as well as PLOS itself. The current dataset as of this writing contains 104037 observations across 36 different variables. Data were collected by PLOS from many sources.  PLOS began tracking article level usage on its own platform in March 2009.  They also obtain article level usage from a number of other platforms (open platforms such as PubMed Central, closed platforms such as Scopus, and Social Media platforms such as Facebook and Twitter) via APIs.  A detailed description of the Article Level Metrics captured by PLOS and provided in the dataset is available at this page:  http://articlemetrics.github.io/plos/
+
+This study will focus on two variables that will be aggregated from the observed data in the spreadsheet: Citation Count and Downloads. The research question to be addressed in this study is:  use the PLOS ALM (Public Library of Science, Article Level Metrics) dataset to determine if there is a correlation between citation counts (obtained from Crossref, PubMed Central, and Scopus platforms) categorized into (NONE, LOW, MEDIUM, HIGH) and total number of downloads (PLOS and PubMedCentral downloads combined).
+
+My interest in this study is based on an effort to find ways to increase usage of published works.  If a correlation can be determined, this may inform authors in the importance of submitting their research papers into prestegeous journals that have a high impact factor to ensure citations are received.  This could lead to higher use of their published works.  Additionally, further research may show a correlation between open source content and increased usage.  This could then inform researchers to make their research more easily accessible in order to receive higher usage, which may then lead to more citations to their work.
+
+### Data:
+Citation:
+Public Library of Science, Article Level Metrics, Cumulative summary spreadsheet of the ALM data for the entire PLOS corpus. (2014). alm_report_2014_01_14.zip [Data set]. http://article-level-metrics.plos.org/plos-alm-data/
+
+The cases represent data for a specific article published in the PLOS journals.  Each article is identified by a DOI (Digital Object Identifier) which uniquely identifies the unit, along with the article title and publication date.  Data collected for each case represents a wide range of usage across a number of different platforms, as well as counts for the number of citations each case has received.
+
+Citation count: the maximum of the counts obtained from the “crossref”, “pubmed”, and “scopus” variables.  Since the platforms providing citation counts may differ in their citation capture rules, we use a maximum value from the following sources: CrossRef, PubMed Central, and Scopus. The counts will be categorized into the values NONE (1), LOW (2), MEDIUM (3), HIGH (4) based on the following criteria:
+
+NONE (value “1”): 0 citations
+LOW (value “2”): 1-10 citations
+MEDIUM (value “3”): 11-100 citations
+HIGH (value “4”): >100 citations
+
+The citation count data are categorical (ordinal).
+
+Downloads: the sum of the “counter” and “pmc” variables.  This provides a total count of usage from the PLOS and PubMed Central platforms.  Total usage is based on html views, PDF downloads, and XML retrievals.
+
+The downloads data are numerical (continuous).
+
+The population of interest is all published articles in the scientific disciplines.  The findings of this study cannot be generalized to that population as the study is performed using observations of citation counts and usage patterns for articles published only within the PLOS journal set. The findings of this study are only applicable to the set of articles published in the PLOS journals.  Sources of bias might include differences in usage patterns for articles published in the open access domain versus articles published in proprietary closed journals such as Science and Nature.
+
+Other sources of bias might include the usage patterns for specific disciplines.  For example, the usage patterns of medical articles versus articles in a discipline such as computer science will likely differ. The date of publication of the article may also provide some bias, since articles more than 3 years old tend to be more highly cited than articles less than 3 years old.
+
+### Exploratory data analysis:
+
+Create a vector of publication years from the publication_date variable and plot:
+```{r fig.height=4, fig.width=7}
+pub_year <- substr(alm_report_2014.03.10$publication_date, 1, 4)
+barplot(table(pub_year))
+```
+The barplot shows an increasing trend in number of journal articles per year.  This phenomena is well known and has been documented in the literature.
+
+Create a cite_count vector by summing the 3 citation count variables together and produce summary statistics:
+```{r}
+cite_count <- pmax(alm_report_2014.03.10$crossref, alm_report_2014.03.10$scopus, alm_report_2014.03.10$pubmed)
+summary(cite_count)
+```
+The summary statistics for the citation counts provides some help in determining the thresholds to apply during categorization.
+
+The summary statistics show that the average number of citations per paper is 17.  There is a long right tail meaning that there are some outliers that have a very high number of citations (with a max of 3440).  This can be seen in the boxplot below.
+
+Create a boxplot without outliers, to show general distribution of the citation counts:
+```{r fig.height=3, fig.width=6}
+boxplot(cite_count, outline=FALSE)
+```
+Categorize the citation count data into bins as discussed above:
+```{r}
+intervals<-c(0, 1, 10, 100, 10000)
+cat_cites<-findInterval(cite_count, intervals)
+```
+There are a large number of papers with no citations, a slightly higher number with 1-10 citations, and even higher amount with 10-100 citations.  There are a small number of outliers that have a very high number of citations >100.  This is shown by the barplot below.
+```{r fig.height=3, fig.width=6}
+maint<-c("Number of Papers By Citation Category")
+xlabel<- c("Citation Category")
+names<- c("NONE", "LOW", "MEDIUM", "HIGH")
+barplot(main=maint, xlab=xlabel, names.arg=names, table(cat_cites))
+```
+Create a total_download vector by summing the 2 download count variables:
+```{r}
+total_download <- alm_report_2014.03.10$counter + alm_report_2014.03.10$pmc
+```
+Produce summary statistics for the total download data:
+```{r}
+summary(total_download)
+```
+The summary statistcs show that the average number of downloads for a paper is roughly 3000.  There are some outliers with a very high download count (max of 972000).  Papers with a very high downlod count might indicate that some automated process was used to repeatedly download the paper in an effort to drive up the count (so called gamimg of the usage data).
+
+The boxplot below has the outliers removed for clarity.
+```{r fig.height=3, fig.width=6}
+boxplot(total_download, outline=FALSE)
+```
+
+### Inference:
+Investigate relationship between citation category and total downloads.
+
+Produce summary statistics for total downloads subsetted by citation category:
+```{r}
+by(total_download, cat_cites, summary)
+```
+Here we can see a clear trend where more highly cited papers receive more downloads. Not only do the median and mean values increase with each citation category, the max value increases as well.  Another interestng observation is that the minimum value is not zero for the higher two citation categories.  So, at least for the PLOS journals, papers with more than 10 citations almost always see some amount of usage.
+
+Create side-by-side boxplots for the downloads by citation category:
+```{r fig.height=3, fig.width=6}
+boxplot(total_download[cat_cites == 1], total_download[cat_cites == 2], total_download[cat_cites == 3], total_download[cat_cites == 4], outline=FALSE, main="Downloads versus Citation Category", xlab="Category(1-4)")
+```
+Analysis of Variance (ANOVA)
+
+This study will perform a hypothesis test across the citation categories to determine whether there is a statistically significant difference in the means.
+
+H0: The means across all of the citation categories are equal.
+HA: At least one of the means is different.
+
+Conditions for inference:
+1) Observations are independent within and across the categories.  It is assumed that the usage for each individual article is indepenent from another.  This seems reasonable.  Also, the sampling (114093 cases) is less than 10% of the entire journal article population.
+2) The data within each group is nearly normal.
+3) The variability across the citation categories is about equal.  
+
+Based on the side-by-side boxplots conditions 2 and 3 seem to be met.  Therefore all the conditions for inference are met.
+
+Load the inference function into R and run the test:
+```{r fig.height=3, fig.width=6}
+source("http://bit.ly/dasi_inference")
+inference(y=total_download, x=as.factor(cat_cites), est="mean", type="ht", alternative="greater", method="theoretical", inf_plot=FALSE, eda_plot=FALSE, sum_stats=FALSE)
+```
+
+### Conclusion:
+The p-value resulting from the ANOVA test is extremely small, therefore we reject H0 (all means are equal) in favor of HA (at least one mean is different).
+
+The p-values of the pairwise tests are all reported as 0, indicating that the means for all pairwise comparisons have a statistically significant difference.  Therefore we conclude that, based on the dataset used in the analysis, there is indeed a correlation between the citation count for an article and the number of downloads.  We can also infer that a similar correlation exists between citation count and downloads for the entire journal article population.
+
+Therefore, researchers who want to recieve citations to their work should look to publish their works in journals that have high usage.  Additionally, alternative ways to drive up usage, such as use of social media to promote publised works should also be considered.  Researchers who want to promote high use of their published works should look to publish in high impact journals that recieve a higher percentage of citations.
+
+### Appendix:
+Sample data:
+```{r}
+head(alm_report_2014.03.10)
+head(cat_cites)
+head(total_download)
+```
