@@ -51,14 +51,14 @@ barplot(table(pub_year))
 ```
 The barplot shows an increasing trend in number of journal articles per year.  This phenomena is well known and has been documented in the literature.
 
-Create a cite_count vector by summing the 3 citation count variables together and produce summary statistics:
+Create a cite_count vector by using the maximum of the 3 citation count variables then output summary statistics:
 ```{r}
 cite_count <- pmax(alm_report_2014.03.10$crossref, alm_report_2014.03.10$scopus, alm_report_2014.03.10$pubmed)
 summary(cite_count)
 ```
 The summary statistics for the citation counts provides some help in determining the thresholds to apply during categorization.
 
-The summary statistics show that the average number of citations per paper is 17.  There is a long right tail meaning that there are some outliers that have a very high number of citations (with a max of 3440).  This can be seen in the boxplot below.
+The summary statistics show that the average number of citations per paper is about 8.5.  There is a long right tail meaning that there are some outliers that have a very high number of citations (with a max of 1739).  This can be seen in the boxplot below.
 
 Create a boxplot without outliers, to show general distribution of the citation counts:
 ```{r fig.height=3, fig.width=6}
@@ -69,7 +69,7 @@ Categorize the citation count data into bins as discussed above:
 intervals<-c(0, 1, 10, 100, 10000)
 cat_cites<-findInterval(cite_count, intervals)
 ```
-There are a large number of papers with no citations, a slightly higher number with 1-10 citations, and even higher amount with 10-100 citations.  There are a small number of outliers that have a very high number of citations >100.  This is shown by the barplot below.
+There are a large number of papers with no citations, a slightly higher number with 1-10 citations, but fewer with the higher amount of 11-100 citations.  There are a small number of outliers that have a very high number of citations >100.  This is shown by the barplot below.
 ```{r fig.height=3, fig.width=6}
 maint<-c("Number of Papers By Citation Category")
 xlabel<- c("Citation Category")
